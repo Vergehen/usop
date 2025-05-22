@@ -77,6 +77,8 @@ function get_label() {
                 security) echo "9. Безпека (SSH, fail2ban, swap, автозапуск)";;
                 version_prompt) echo "Версія: ";;
                 no_versions) echo "Версії не знайдено";;
+                no_services) echo "Немає встановлених служб.";;
+                must_install) echo "Спочатку встановіть компоненти через меню 'Керування веб-стеком'.";;
             esac;;
         EN)
             case $1 in
@@ -129,6 +131,8 @@ function get_label() {
                 security) echo "9. Security tools (SSH, fail2ban, swap, autostart)";;
                 version_prompt) echo "Version: ";;
                 no_versions) echo "No versions found";;
+                no_services) echo "No services installed.";;
+                must_install) echo "Please install components via 'Web Stack Management' menu first.";;
             esac;;
     esac
 }
@@ -148,7 +152,14 @@ function show_menu {
     echo -e "${NC}"
     echo "$(get_label main1)"
     echo "$(get_label main2)"
-    echo "$(get_label main3)"
+    
+    if any_component_installed; then
+        echo "$(get_label main3)"
+        services_installed=true
+    else
+        services_installed=false
+    fi
+    
     echo "$(get_label main4)"
     echo "$(get_label main5)"
     echo "$(get_label change_lang)"
@@ -157,7 +168,14 @@ function show_menu {
     case $choice in
         1) setup_stack_menu ;;
         2) add_domain ;;
-        3) manage_modules_menu ;;
+        3) 
+            if $services_installed; then
+                manage_modules_menu
+            else
+                echo -e "${RED}$(get_label invalid)${NC}"
+                sleep 2
+                show_menu
+            fi ;;
         4) extra_tools_menu ;;
         5) exit 0 ;;
         6) set_language ; show_menu ;;
@@ -203,6 +221,37 @@ function manual_install_component {
 function show_versions {
     local component=$1
     apt-cache madison $component | awk '{print $3}' || echo "$(get_label no_versions)"
+}
+
+function is_package_installed() {
+    local package_name=$1
+    dpkg -l | grep -q "^ii  $package_name "
+    return $?
+}
+
+function get_installed_components() {
+    local installed_components=()
+    local components=("nginx" "apache2" "php" "mysql-server" "phpmyadmin" "adminer" "nodejs" "postgresql" "redis-server" "docker.io" "fail2ban" "ssh")
+    
+    for component in "${components[@]}"; do
+        if is_package_installed "$component"; then
+            installed_components+=("$component")
+        fi
+    done
+    
+    echo "${installed_components[@]}"
+}
+
+function any_component_installed() {
+    local components=("nginx" "apache2" "php" "mysql-server" "phpmyadmin" "adminer" "nodejs" "postgresql" "redis-server" "docker.io" "fail2ban" "ssh")
+    
+    for component in "${components[@]}"; do
+        if is_package_installed "$component"; then
+            return 0
+        fi
+    done
+    
+    return 1
 }
 
 function manage_component {
@@ -279,9 +328,26 @@ EOF
 function manage_modules_menu {
     clear
     echo -e "${CYAN}$(get_label service_title)${NC}"
-    services=("nginx" "apache2" "mysql" "postgresql" "redis" "docker" "fail2ban" "ssh")
+    
+    all_services=("nginx" "apache2" "mysql" "postgresql" "redis-server" "docker.io" "fail2ban" "ssh")
+    
+    installed_services=()
+    for svc in "${all_services[@]}"; do
+        if is_package_installed "$svc"; then
+            installed_services+=("$svc")
+        fi
+    done
+    
+    if [ ${#installed_services[@]} -eq 0 ]; then
+        echo -e "${YELLOW}$(get_label no_services)${NC}"
+        echo -e "${YELLOW}$(get_label must_install)${NC}"
+        sleep 3
+        show_menu
+        return
+    fi
+    
     i=1
-    for svc in "${services[@]}"; do
+    for svc in "${installed_services[@]}"; do
         echo "$i. $svc"
         ((i++))
     done
@@ -293,8 +359,8 @@ function manage_modules_menu {
         return
     fi
 
-    if (( svc_index >= 1 && svc_index <= ${#services[@]} )); then
-        svc_name=${services[$((svc_index - 1))]}
+    if (( svc_index >= 1 && svc_index <= ${#installed_services[@]} )); then
+        svc_name=${installed_services[$((svc_index - 1))]}
         printf "$(get_label start)\n" "$svc_name"
         printf "$(get_label stop)\n" "$svc_name"
         printf "$(get_label restart)\n" "$svc_name"

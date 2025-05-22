@@ -13,14 +13,14 @@
 
 ## 📑 Зміст / Contents
 
-- [Про проект / About](#про-проект--about)
-- [Можливості / Features](#можливості--features)
-- [Встановлення / Installation](#встановлення--installation)
+- [Про проект / About](#-про-проект--about)
+- [Можливості / Features](#-можливості--features)
+- [Встановлення / Installation](#-встановлення--installation)
   - [На Ubuntu](#на-ubuntu)
   - [На Windows через WSL](#на-windows-через-wsl)
-- [Використання / Usage](#використання--usage)
-- [Автор / Author](#автор--author)
-- [Ліцензія / License](#ліцензія--license)
+- [Використання / Usage](#-використання--usage)
+- [Автор / Author](#-автор--author)
+- [Ліцензія / License](#-ліцензія--license)
 
 ## 🚀 Про проект / About
 
@@ -283,3 +283,13 @@ Choose the desired option by entering the corresponding number and follow the on
 
 Author: **Bohdan Stroy**  
 Created with ❤️ to simplify Ubuntu server management.
+
+## 📄 Ліцензія / License
+
+**🇺🇦 Українська:**
+
+Цей проект ліцензовано за умовами ліцензії MIT. Дивіться файл LICENSE для деталей.
+
+**🇬🇧 English:**
+
+This project is licensed under the MIT License. See the LICENSE file for details.

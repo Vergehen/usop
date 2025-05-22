@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Ubuntu-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Language-Bash-brightgreen" alt="Language">
-  <img src="https://img.shields.io/badge/Status-Active-success" alt="Status">
+  <!-- <img src="https://img.shields.io/badge/Status-Active-success" alt="Status"> -->
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
 </p>
 

@@ -229,6 +229,76 @@ function is_package_installed() {
     return $?
 }
 
+function has_systemd() {
+    [ -d /run/systemd/system ] && return 0 || return 1
+}
+
+function service_control() {
+    local action=$1
+    local service=$2
+    
+    if has_systemd; then
+        case "$action" in
+            start) sudo systemctl start "$service" ;;
+            stop) sudo systemctl stop "$service" ;;
+            restart) sudo systemctl restart "$service" ;;
+            reload) sudo systemctl reload "$service" ;;
+            enable) sudo systemctl enable "$service" ;;
+            status) sudo systemctl status "$service" ;;
+        esac
+    else
+        case "$action" in
+            start) 
+                if [ -f "/etc/init.d/$service" ]; then
+                    sudo /etc/init.d/"$service" start
+                else
+                    echo -e "${YELLOW}Service control not available in this environment.${NC}"
+                fi ;;
+            stop)
+                if [ -f "/etc/init.d/$service" ]; then
+                    sudo /etc/init.d/"$service" stop
+                else
+                    echo -e "${YELLOW}Service control not available in this environment.${NC}"
+                fi ;;
+            restart)
+                if [ -f "/etc/init.d/$service" ]; then
+                    sudo /etc/init.d/"$service" restart
+                else
+                    echo -e "${YELLOW}Service control not available in this environment.${NC}"
+                fi ;;
+            reload)
+                if [ -f "/etc/init.d/$service" ]; then
+                    sudo /etc/init.d/"$service" reload
+                elif [ "$service" = "nginx" ]; then
+                    sudo nginx -s reload
+                else
+                    echo -e "${YELLOW}Service reload not available in this environment.${NC}"
+                fi ;;
+            enable)
+                if has_systemd; then
+                    sudo systemctl enable "$service"
+                else
+                    echo -e "${YELLOW}Service autostart not supported in this environment.${NC}"
+                    if [ -f "/etc/init.d/$service" ]; then
+                        sudo update-rc.d "$service" defaults
+                    fi
+                fi ;;
+            status)
+                if [ -f "/etc/init.d/$service" ]; then
+                    sudo /etc/init.d/"$service" status
+                elif [ "$service" = "nginx" ]; then
+                    ps aux | grep "[n]ginx" || echo "Nginx is not running"
+                elif [ "$service" = "apache2" ]; then
+                    ps aux | grep "[a]pache2" || echo "Apache is not running"
+                elif [ "$service" = "mysql" ]; then
+                    ps aux | grep "[m]ysqld" || echo "MySQL is not running"
+                else
+                    ps aux | grep "$service" || echo "$service process not found"
+                fi ;;
+        esac
+    fi
+}
+
 function get_installed_components() {
     local installed_components=()
     local components=("nginx" "apache2" "php" "mysql-server" "phpmyadmin" "adminer" "nodejs" "postgresql" "redis-server" "docker.io" "fail2ban" "ssh")
@@ -272,7 +342,12 @@ function manage_component {
         2) sudo apt install --reinstall -y $component ;;
         3) sudo apt purge --autoremove -y $component ;;
         4) sudo nano /etc/${component}/* 2>/dev/null || echo "$(get_label no_config)" ;;
-        5) $component -v 2>/dev/null || $component --version 2>/dev/null || echo "$(get_label version_not_supported)" ;;
+        5) 
+            if [ "$component" = "nginx" ]; then
+                nginx -v 2>&1 || echo "$(get_label version_not_supported)"
+            else
+                $component -v 2>/dev/null || $component --version 2>/dev/null || echo "$(get_label version_not_supported)"
+            fi ;;
         6) echo -e "${YELLOW}$(get_label select_version)${NC}"; show_versions $component ;;
         7) echo -e "${YELLOW}$(get_label select_version)${NC}"; show_versions $component; read -p "$(get_label version_prompt)" ver; sudo apt install -y ${component}=${ver} ;;
         0) setup_stack_menu ;;
@@ -316,8 +391,8 @@ server {
 EOF
         sudo mkdir -p /var/www/$domain
         echo "<h1>$domain works!</h1>" | sudo tee /var/www/$domain/index.html > /dev/null
-        sudo ln -s /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/
-        sudo nginx -t && sudo systemctl reload nginx
+        sudo ln -sf /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/
+        sudo nginx -t && service_control reload nginx
         echo -e "${GREEN}$(get_label nginx_created)${NC}"
     fi
 
@@ -368,10 +443,10 @@ function manage_modules_menu {
         echo "$(get_label back)"
         read -p "$(get_label action_prompt)" action
         case $action in
-            1) sudo systemctl start $svc_name ;;
-            2) sudo systemctl stop $svc_name ;;
-            3) sudo systemctl restart $svc_name ;;
-            4) sudo systemctl status $svc_name ;;
+            1) service_control start $svc_name ;;
+            2) service_control stop $svc_name ;;
+            3) service_control restart $svc_name ;;
+            4) service_control status $svc_name ;;
             0) manage_modules_menu ;;
             *) echo -e "${RED}$(get_label invalid)${NC}";;
         esac
@@ -408,8 +483,8 @@ function extra_tools_menu {
         8) sudo apt install htop glances -y ;;
         9)
             sudo apt install fail2ban -y
-            sudo systemctl enable fail2ban
-            sudo systemctl start fail2ban
+            service_control enable fail2ban
+            service_control start fail2ban
             sudo fallocate -l 2G /swapfile
             sudo chmod 600 /swapfile
             sudo mkswap /swapfile

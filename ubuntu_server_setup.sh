@@ -42,6 +42,41 @@ function get_label() {
                 stack_title) echo "Керування компонентами веб-стеку:";;
                 select_version) echo "Доступні версії:";;
                 manual_install) echo "Введіть назву пакету для ручної установки:";;
+                domain_title) echo "Додавання локального домену";;
+                domain_empty) echo "Ім'я домену не може бути порожнім.";;
+                domain_exists) echo "Домен вже існує у /etc/hosts.";;
+                domain_added) echo "Домен додано у /etc/hosts.";;
+                nginx_created) echo "Конфігурацію Nginx створено та перезавантажено.";;
+                service_title) echo "Стан та керування службами";;
+                action_prompt) echo "Оберіть дію: ";;
+                invalid_service) echo "Неправильний вибір служби.";;
+                install_default) echo "1. Встановити (версія за замовчуванням)";;
+                reinstall) echo "2. Перевстановити";;
+                remove) echo "3. Видалити";;
+                configure) echo "4. Налаштувати";;
+                current_version) echo "5. Показати поточну версію";;
+                available_versions) echo "6. Показати доступні версії";;
+                manual_version) echo "7. Встановити конкретну версію";;
+                no_config) echo "Конфігураційний файл не знайдено.";;
+                version_not_supported) echo "Команда версії не підтримується.";;
+                domain_prompt) echo "Введіть ім'я домену (наприклад, mysite.local): ";;
+                nginx_confirm) echo "Створити конфігурацію Nginx для %s? (т/н): ";;
+                start) echo "1. Запустити %s";;
+                stop) echo "2. Зупинити %s";;
+                restart) echo "3. Перезапустити %s";;
+                status) echo "4. Статус %s";;
+                press_enter) echo "Натисніть Enter для повернення...";;
+                docker) echo "1. Docker та Docker Compose";;
+                redis) echo "2. Redis";;
+                mongodb) echo "3. MongoDB";;
+                postgresql) echo "4. PostgreSQL";;
+                python) echo "5. Python та venv";;
+                letsencrypt) echo "6. Let's Encrypt SSL-сертифікати";;
+                firewall) echo "7. UFW / Брандмауер";;
+                monitoring) echo "8. Моніторинг (htop, glances)";;
+                security) echo "9. Безпека (SSH, fail2ban, swap, автозапуск)";;
+                version_prompt) echo "Версія: ";;
+                no_versions) echo "Версії не знайдено";;
             esac;;
         EN)
             case $1 in
@@ -59,6 +94,41 @@ function get_label() {
                 stack_title) echo "Manage Web Stack Components:";;
                 select_version) echo "Available versions:";;
                 manual_install) echo "Enter package name for manual install:";;
+                domain_title) echo "Add Local Domain";;
+                domain_empty) echo "Domain name cannot be empty.";;
+                domain_exists) echo "Domain already exists in /etc/hosts.";;
+                domain_added) echo "Domain added to /etc/hosts.";;
+                nginx_created) echo "Nginx config created and reloaded.";;
+                service_title) echo "Services Status and Control";;
+                action_prompt) echo "Choose action: ";;
+                invalid_service) echo "Invalid service selection.";;
+                install_default) echo "1. Install (default version)";;
+                reinstall) echo "2. Reinstall";;
+                remove) echo "3. Remove";;
+                configure) echo "4. Configure";;
+                current_version) echo "5. Show current version";;
+                available_versions) echo "6. Show available versions";;
+                manual_version) echo "7. Manual version install";;
+                no_config) echo "No config file found.";;
+                version_not_supported) echo "Version command not supported.";;
+                domain_prompt) echo "Enter domain name (e.g., mysite.local): ";;
+                nginx_confirm) echo "Create Nginx config for %s? (y/n): ";;
+                start) echo "1. Start %s";;
+                stop) echo "2. Stop %s";;
+                restart) echo "3. Restart %s";;
+                status) echo "4. Status %s";;
+                press_enter) echo "Press Enter to return...";;
+                docker) echo "1. Docker & Docker Compose";;
+                redis) echo "2. Redis";;
+                mongodb) echo "3. MongoDB";;
+                postgresql) echo "4. PostgreSQL";;
+                python) echo "5. Python + venv";;
+                letsencrypt) echo "6. Let's Encrypt Certificates";;
+                firewall) echo "7. UFW / Firewall";;
+                monitoring) echo "8. Monitoring (htop, glances)";;
+                security) echo "9. Security tools (SSH, fail2ban, swap, autostart)";;
+                version_prompt) echo "Version: ";;
+                no_versions) echo "No versions found";;
             esac;;
     esac
 }
@@ -132,30 +202,30 @@ function manual_install_component {
 
 function show_versions {
     local component=$1
-    apt-cache madison $component | awk '{print $3}' || echo "No versions found"
+    apt-cache madison $component | awk '{print $3}' || echo "$(get_label no_versions)"
 }
 
 function manage_component {
     local component=$1
     clear
     echo -e "${CYAN}${component^^} MANAGEMENT${NC}"
-    echo "1. Install (default version)"
-    echo "2. Reinstall"
-    echo "3. Remove"
-    echo "4. Configure"
-    echo "5. Show current version"
-    echo "6. Show available versions"
-    echo "7. Manual version install"
+    echo "$(get_label install_default)"
+    echo "$(get_label reinstall)"
+    echo "$(get_label remove)"
+    echo "$(get_label configure)"
+    echo "$(get_label current_version)"
+    echo "$(get_label available_versions)"
+    echo "$(get_label manual_version)"
     echo "$(get_label back)"
     read -p "$(get_label prompt)" choice
     case $choice in
         1) sudo apt install -y $component ;;
         2) sudo apt install --reinstall -y $component ;;
         3) sudo apt purge --autoremove -y $component ;;
-        4) sudo nano /etc/${component}/* 2>/dev/null || echo "No config file found." ;;
-        5) $component -v 2>/dev/null || $component --version 2>/dev/null || echo "Version command not supported." ;;
+        4) sudo nano /etc/${component}/* 2>/dev/null || echo "$(get_label no_config)" ;;
+        5) $component -v 2>/dev/null || $component --version 2>/dev/null || echo "$(get_label version_not_supported)" ;;
         6) echo -e "${YELLOW}$(get_label select_version)${NC}"; show_versions $component ;;
-        7) echo -e "${YELLOW}$(get_label select_version)${NC}"; show_versions $component; read -p "Version: " ver; sudo apt install -y ${component}=${ver} ;;
+        7) echo -e "${YELLOW}$(get_label select_version)${NC}"; show_versions $component; read -p "$(get_label version_prompt)" ver; sudo apt install -y ${component}=${ver} ;;
         0) setup_stack_menu ;;
         *) echo -e "${RED}$(get_label invalid)${NC}"; sleep 2 ;;
     esac
@@ -163,18 +233,102 @@ function manage_component {
     manage_component $component
 }
 
+function add_domain {
+    clear
+    echo -e "${CYAN}$(get_label domain_title)${NC}"
+    read -p "$(get_label domain_prompt)" domain
+    if [[ -z "$domain" ]]; then
+        echo -e "${RED}$(get_label domain_empty)${NC}"
+        sleep 2
+        show_menu
+        return
+    fi
+
+    if ! grep -q "$domain" /etc/hosts; then
+        echo "127.0.0.1 $domain" | sudo tee -a /etc/hosts > /dev/null
+        echo -e "${GREEN}$(get_label domain_added)${NC}"
+    else
+        echo -e "${YELLOW}$(get_label domain_exists)${NC}"
+    fi
+
+    prompt=$(printf "$(get_label nginx_confirm)" "$domain")
+    read -p "$prompt" confirm
+    if [[ "$confirm" == "y" || "$confirm" == "т" ]]; then
+        sudo bash -c "cat > /etc/nginx/sites-available/$domain" <<EOF
+server {
+    listen 80;
+    server_name $domain;
+    root /var/www/$domain;
+    index index.html index.htm;
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF
+        sudo mkdir -p /var/www/$domain
+        echo "<h1>$domain works!</h1>" | sudo tee /var/www/$domain/index.html > /dev/null
+        sudo ln -s /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/
+        sudo nginx -t && sudo systemctl reload nginx
+        echo -e "${GREEN}$(get_label nginx_created)${NC}"
+    fi
+
+    sleep 3
+    show_menu
+}
+
+function manage_modules_menu {
+    clear
+    echo -e "${CYAN}$(get_label service_title)${NC}"
+    services=("nginx" "apache2" "mysql" "postgresql" "redis" "docker" "fail2ban" "ssh")
+    i=1
+    for svc in "${services[@]}"; do
+        echo "$i. $svc"
+        ((i++))
+    done
+    echo "$(get_label back)"
+    read -p "$(get_label prompt)" svc_index
+
+    if [[ "$svc_index" == "0" ]]; then
+        show_menu
+        return
+    fi
+
+    if (( svc_index >= 1 && svc_index <= ${#services[@]} )); then
+        svc_name=${services[$((svc_index - 1))]}
+        printf "$(get_label start)\n" "$svc_name"
+        printf "$(get_label stop)\n" "$svc_name"
+        printf "$(get_label restart)\n" "$svc_name"
+        printf "$(get_label status)\n" "$svc_name"
+        echo "$(get_label back)"
+        read -p "$(get_label action_prompt)" action
+        case $action in
+            1) sudo systemctl start $svc_name ;;
+            2) sudo systemctl stop $svc_name ;;
+            3) sudo systemctl restart $svc_name ;;
+            4) sudo systemctl status $svc_name ;;
+            0) manage_modules_menu ;;
+            *) echo -e "${RED}$(get_label invalid)${NC}";;
+        esac
+    else
+        echo -e "${RED}$(get_label invalid_service)${NC}"
+    fi
+
+    read -p "$(get_label press_enter)" _
+    manage_modules_menu
+}
+
 function extra_tools_menu {
     clear
     echo -e "${CYAN}$(get_label tools_title)${NC}"
-    echo "1. Docker & Docker Compose"
-    echo "2. Redis"
-    echo "3. MongoDB"
-    echo "4. PostgreSQL"
-    echo "5. Python + venv"
-    echo "6. Let's Encrypt Certificates"
-    echo "7. UFW / Firewall"
-    echo "8. Monitoring (htop, glances)"
-    echo "9. Security tools (SSH, fail2ban, swap, autostart)"
+    echo "$(get_label docker)"
+    echo "$(get_label redis)"
+    echo "$(get_label mongodb)"
+    echo "$(get_label postgresql)"
+    echo "$(get_label python)"
+    echo "$(get_label letsencrypt)"
+    echo "$(get_label firewall)"
+    echo "$(get_label monitoring)"
+    echo "$(get_label security)"
     echo "$(get_label back)"
     read -p "$(get_label prompt)" choice
     case $choice in

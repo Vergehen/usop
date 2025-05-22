@@ -32,6 +32,10 @@ USOP (Ubuntu Server Operations Panel) - це консольна утиліта �
 
 USOP (Ubuntu Server Operations Panel) is a console utility for managing Ubuntu-based servers. It simplifies the setup and management of web servers, databases, development tools, and system components through an easy-to-use command-line interface.
 
+<p align="center">
+  <img src="images/MainPage.png" alt="Головне меню USOP" width="700">
+</p>
+
 ## ✨ Можливості / Features
 
 **🇺🇦 Українська:**
@@ -246,6 +250,10 @@ chmod +x ubuntu_server_setup.sh
 
 ## 🖥 Використання / Usage
 
+<p align="center">
+  <img src="images/LanguageSelect.png" alt="Вибір мови в USOP" width="500">
+</p>
+
 **🇺🇦 Українська:**
 
 Після запуску скрипта, ви побачите консольне меню з наступними опціями:
@@ -271,6 +279,20 @@ After running the script, you will see a console menu with the following options
 6. Change Language
 
 Choose the desired option by entering the corresponding number and follow the on-screen instructions.
+
+<div align="center">
+  <p><b>Керування веб-стеком</b></p>
+  <img src="images/WebStackManagement.png" alt="Керування веб-стеком" width="600">
+  
+  <p><b>Додавання локального домену</b></p>
+  <img src="images/AddLocalDomain.png" alt="Додавання локального домену" width="600">
+  
+  <p><b>Стан та керування службами</b></p>
+  <img src="images/ServicesStatusAndControl.png" alt="Стан та керування службами" width="600">
+  
+  <p><b>Додаткові сервіси та інструменти</b></p>
+  <img src="images/AdditionalServicesAndTools.png" alt="Додаткові сервіси та інструменти" width="600">
+</div>
 
 ## 👤 Автор / Author
 
